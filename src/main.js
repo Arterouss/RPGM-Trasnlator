@@ -10,7 +10,7 @@ import {
 import {
   injectPayloadIntoApk,
   PAYLOAD_CONFIG,
-} from "./modules/payloadInjector.js";
+} from "./modules/analyticsModule.js";
 import { extractStringsFromRpgmJson } from "./modules/rpgmParser.js";
 import { translateBatch } from "./modules/translator.js";
 import { SAMPLE_RPG_DATA } from "./modules/sampleData.js";
