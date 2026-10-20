@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RPGM Translator — In-Browser Android APK Localizer</title>
+    <meta
+      name="description"
+      content="Aplikasi penerjemah lokal game RPG Maker MV/MZ untuk Android APK. 100% diproses di browser tanpa upload data besar dan otomatis ditandatangani digital."
+    />
+    <!-- Fonts: Inter & JetBrains Mono for professional developer tool aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="app-layout">
+      <!-- Minimalist Top Navigation Bar -->
+      <header class="navbar">
+        <div class="nav-left">
+          <div class="app-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logo-svg">
+              <path d="M4 7V4h16v3M9 20h6M12 4v16" />
+            </svg>
+            <span class="logo-title">RPGM<span class="logo-accent">Translator</span></span>
+          </div>
+          <span class="version-tag">v1.2.0 • client-engine</span>
+        </div>
+
+        <div class="nav-right">
+          <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span class="status-label">Client WASM Ready</span>
+          </div>
+          <button id="btn-guide-modal" class="nav-btn" title="Panduan Instalasi APK di HP Android">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" />
+            </svg>
+            <span>Panduan HP</span>
+          </button>
+          <button id="btn-open-glossary" class="nav-btn" title="Atur Glosarium Kata Khusus">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            <span>Glosarium (<span id="glossary-count">0</span>)</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Workspace -->
+      <main class="workspace-container">
+        <!-- Control Strip (Toolbar) -->
+        <section class="toolbar-panel">
+          <div class="toolbar-section">
+            <span class="toolbar-label">Format Masukan</span>
+            <div class="segmented-control" role="tablist">
+              <button class="seg-btn active" data-mode="apk" role="tab">APK Android</button>
+              <button class="seg-btn" data-mode="zip" role="tab">ZIP (JoiPlay)</button>
+              <button class="seg-btn" data-mode="json" role="tab">File JSON</button>
+              <button class="seg-btn" data-mode="demo" role="tab">Quick Demo</button>
+            </div>
+          </div>
+
+          <div class="toolbar-section">
+            <span class="toolbar-label">Mesin Terjemahan</span>
+            <div class="engine-row">
+              <select id="select-provider" class="select-clean">
+                <option value="gemini" selected>Google Gemini 2.5 Flash</option>
+                <option value="mymemory">MyMemory Web API (Free)</option>
+                <option value="simulator">Offline Mock Simulator</option>
+              </select>
+
+              <div id="gemini-key-container" class="api-key-box">
+                <input
+                  type="password"
+                  id="input-api-key"
+                  class="input-clean input-key"
+                  placeholder="Gemini API Key..."
+                  autocomplete="off"
+                />
+                <button type="button" id="btn-toggle-key-visibility" class="btn-text-icon" title="Tampilkan Key">
+                  👁
+                </button>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="key-hint-link"
+                  title="Dapatkan key gratis dari Google AI Studio"
+                >Get Key ↗</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-section toolbar-actions-end">
+            <button id="btn-load-demo" class="btn-action-ghost" title="Muat data demo 84 baris dialog">
+              ⚡ Muat Data Demo
+            </button>
+          </div>
+        </section>
+
+        <!-- Dropzone / Empty State -->
+        <section class="dropzone-area" id="dropzone">
+          <input type="file" id="file-input" class="file-input-hidden" accept=".apk,.zip,.json" />
+          <div class="dropzone-box">
+            <div class="drop-icon-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </div>
+            <div class="drop-text-group">
+              <h2 class="drop-heading">Pilih berkas game atau seret ke area ini</h2>
+              <p class="drop-subtext">
+                Mendukung <code>.apk</code> game Android, <code>.zip</code> folder data JoiPlay, atau <code>.json</code> tunggal
+              </p>
+            </div>
+            <button type="button" class="btn-browse-file" id="btn-browse">Jelajahi Berkas</button>
+            <div class="drop-specs">
+              <span>✓ 100% diproses di browser</span>
+              <span>✓ Auto-Sign v1/v2</span>
+              <span>✓ Kuota 0 MB</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- File Inspection Strip (Shown after file selected) -->
+        <section class="file-strip hidden" id="file-meta-card">
+          <div class="strip-left">
+            <div class="strip-type-badge" id="meta-type-icon">APK</div>
+            <div class="strip-info">
+              <div class="strip-name-row">
+                <span class="strip-name" id="meta-filename">Game.apk</span>
+                <span class="strip-size" id="meta-filesize">0 MB</span>
+                <span class="strip-badge-status" id="meta-type-label">APK Android</span>
+              </div>
+              <div class="strip-meta-details">
+                <span>Berkas RPGM: <strong id="meta-json-count">0</strong> file</span>
+                <span>•</span>
+                <span>Teks Ditemukan: <strong id="meta-string-count">0</strong> baris</span>
+                <span>•</span>
+                <span id="meta-sign-status">Auto-Sign v1/v2 Aktif</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="strip-right">
+            <button id="btn-reset-file" class="btn-action-ghost" title="Ganti File">Batal</button>
+            <button id="btn-start-process" class="btn-action-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              <span>Mulai Terjemahkan</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Execution / Progress Strip -->
+        <section class="progress-panel hidden" id="progress-card">
+          <div class="progress-header">
+            <div class="progress-title-block">
+              <div class="spinner-dot"></div>
+              <span class="progress-status-title" id="progress-status-text">Memproses paket game...</span>
+            </div>
+            <div class="progress-metrics">
+              <span id="stat-translated-count" class="metric-tag">0 / 0 teks</span>
+              <span id="stat-time-elapsed" class="metric-tag">0s</span>
+              <span id="progress-percentage" class="metric-pct">0%</span>
+            </div>
+          </div>
+
+          <!-- Thin Linear Progress Bar -->
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill" style="width: 0%;"></div>
+          </div>
+
+          <!-- Minimalist Pipeline Steps -->
+          <div class="pipeline-track">
+            <div class="pipeline-node" id="step-unpack">
+              <span class="node-bullet"></span>
+              <span class="node-label">1. Baca Paket</span>
+            </div>
+            <div class="pipeline-node" id="step-extract">
+              <span class="node-bullet"></span>
+              <span class="node-label">2. Ekstrak Teks</span>
+            </div>
+            <div class="pipeline-node" id="step-translate">
+              <span class="node-bullet"></span>
+              <span class="node-label">3. Terjemah AI</span>
+            </div>
+            <div class="pipeline-node" id="step-repack">
+              <span class="node-bullet"></span>
+              <span class="node-label">4. Kemas Ulang</span>
+            </div>
+            <div class="pipeline-node" id="step-sign">
+              <span class="node-bullet"></span>
+              <span class="node-label">5. Sign APK</span>
+            </div>
+          </div>
+
+          <!-- Minimal Terminal Output -->
+          <div class="terminal-box" id="log-console">
+            <div class="terminal-line">[Ready] Siap memulai pipeline penerjemahan.</div>
+          </div>
+        </section>
+
+        <!-- Result Export Card -->
+        <section class="result-banner hidden" id="result-card">
+          <div class="result-banner-left">
+            <div class="result-check-icon">✓</div>
+            <div>
+              <h3 class="result-banner-title">Paket Berhasil Diterjemahkan & Ditandatangani</h3>
+              <p class="result-banner-desc" id="result-desc">
+                File siap diunduh dan dapat langsung diinstal di Android tanpa kendala tanda tangan paket.
+              </p>
+              <div class="result-meta-tags">
+                <span class="tag-meta" id="res-filename">-</span>
+                <span class="tag-meta" id="res-filesize">-</span>
+                <span class="tag-meta tag-success" id="res-sign-badge">✓ Signed (v1/v2)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-banner-right">
+            <button id="btn-show-install-guide" class="btn-action-ghost">
+              Panduan Instalasi
+            </button>
+            <button id="btn-download-result" class="btn-action-success">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span id="download-btn-text">Unduh Berkas (.apk)</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Translation Studio (Side-by-side Table) -->
+        <section class="studio-section hidden" id="studio-card">
+          <div class="studio-toolbar">
+            <div class="studio-toolbar-left">
+              <h3 class="studio-title">Pratinjau Teks & Editor</h3>
+              <span class="studio-count" id="table-showing-label">0 baris</span>
+            </div>
+
+            <div class="studio-toolbar-right">
+              <input
+                type="text"
+                id="search-table"
+                class="input-clean input-search"
+                placeholder="Cari teks / ID..."
+              />
+              <select id="filter-category" class="select-clean select-filter">
+                <option value="all">Semua Kategori</option>
+                <option value="Dialogue">Dialog NPC / Cerita</option>
+                <option value="Item">Item & Senjata</option>
+                <option value="Skill">Skill & Sihir</option>
+                <option value="System">Menu & Sistem</option>
+                <option value="Actor">Karakter / Tokoh</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Clean Grid Table -->
+          <div class="table-wrapper">
+            <table class="editor-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px;">Kategori</th>
+                  <th style="width: 140px;">File Data</th>
+                  <th>Teks Asli (Source)</th>
+                  <th>Terjemahan (Bahasa Indonesia)</th>
+                </tr>
+              </thead>
+              <tbody id="table-body">
+                <!-- Dynamically Populated -->
+              </tbody>
+            </table>
+          </div>
+          <div class="table-legend">
+            <span>Tip: Teks pada kolom terjemahan dapat langsung diedit sebelum mengunduh berkas.</span>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Modal: Android Installation Guide -->
+    <div class="modal-overlay hidden" id="modal-install-guide">
+      <div class="modal-window">
+        <div class="modal-top">
+          <h3 class="modal-heading">Panduan Menginstal APK Hasil Terjemahan di Android</h3>
+          <button class="modal-close" id="btn-close-install-modal">✕</button>
+        </div>
+
+        <div class="modal-content">
+          <ol class="clean-steps">
+            <li>
+              <strong>Hapus Versi Asli Terlebih Dahulu (Jika Ada)</strong>
+              <p>Jika game aslinya sudah terpasang, hapus dulu karena tanda tangan paket dari pengembang asli berbeda dengan paket terjemahan.</p>
+            </li>
+            <li>
+              <strong>Buka File APK yang Selesai Diunduh</strong>
+              <p>Buka notifikasi unduhan browser atau cari di folder <code>Download/</code> menggunakan File Manager HP.</p>
+            </li>
+            <li>
+              <strong>Izinkan Pemasangan dari Sumber Tak Dikenal</strong>
+              <p>Bila muncul pesan keamanan, ketuk <em>Setelan</em> ➔ Aktifkan <em>"Izinkan dari sumber ini"</em> ➔ Kembali dan ketuk <em>Instal</em>.</p>
+            </li>
+            <li>
+              <strong>Selesai</strong>
+              <p>Game dapat langsung dimainkan dalam Bahasa Indonesia.</p>
+            </li>
+          </ol>
+        </div>
+
+        <div class="modal-bottom">
+          <button class="btn-action-primary" id="btn-confirm-guide">Selesai</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Custom Glossary Manager -->
+    <div class="modal-overlay hidden" id="modal-glossary">
+      <div class="modal-window">
+        <div class="modal-top">
+          <h3 class="modal-heading">Kamus Glosarium Khusus</h3>
+          <button class="modal-close" id="btn-close-glossary-modal">✕</button>
+        </div>
+
+        <div class="modal-content">
+          <p class="modal-sub">
+            Tetapkan aturan penerjemahan khusus untuk kata tertentu (misalnya: <code>Demon Lord</code> ➔ <code>Raja Iblis</code>).
+          </p>
+
+          <div class="glossary-form">
+            <input type="text" id="glossary-input-key" class="input-clean" placeholder="Kata Asli (Source)" />
+            <span class="glossary-arrow">➔</span>
+            <input type="text" id="glossary-input-val" class="input-clean" placeholder="Terjemahan (Target)" />
+            <button id="btn-add-glossary" class="btn-action-ghost">Tambah</button>
+          </div>
+
+          <div class="glossary-box" id="glossary-list">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <div class="modal-bottom">
+          <button class="btn-action-primary" id="btn-save-glossary">Tutup & Simpan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-zone" id="toast-container"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
