@@ -10,7 +10,7 @@ Aplikasi web modern untuk menerjemahkan game **RPG Maker (MV & MZ)** ke dalam Ba
   File APK sebesar 500 MB – 1 GB tidak diunggah ke server internet. Browser membuka arsip APK secara lokal menggunakan `@zip.js/zip.js`, hanya membaca teks percakapan JSON di folder `assets/www/data/`, dan hanya mengirim baris teks untuk diterjemahkan.
 
 - **In-Browser APK Digital Signer (Auto-Sign v1/v2)**  
-  APK yang telah dimodifikasi otomatis dibersihkan dari sertifikat lama (`META-INF/`) dan ditandatangani ulang (*re-signed*) langsung di browser menggunakan `@chromeos/android-package-signer` (mendukung Scheme v1, v2, dan Zipalign 4-byte). File APK yang dihasilkan valid dan siap diinstal langsung di HP Android.
+  APK yang telah dimodifikasi otomatis dibersihkan dari sertifikat lama (`META-INF/`) dan ditandatangani ulang (_re-signed_) langsung di browser menggunakan `@chromeos/android-package-signer` (mendukung Scheme v1, v2, dan Zipalign 4-byte). File APK yang dihasilkan valid dan siap diinstal langsung di HP Android.
 
 - **Perlindungan Sintaks & Escape Code RPG Maker**  
   Dilengkapi parser khusus yang melindungi kode-kode format game seperti `\N[1]` (nama karakter), `\C[2]` (warna teks), `\V[n]` (variabel), dan `\I[n]` (ikon) dengan sistem masking agar tidak dirusak atau salah diartikan oleh mesin penerjemah.
@@ -36,43 +36,48 @@ Aplikasi web modern untuk menerjemahkan game **RPG Maker (MV & MZ)** ke dalam Ba
 
 ## 🛠️ Teknologi yang Digunakan
 
-| Komponen | Teknologi |
-| :--- | :--- |
-| **Frontend Core** | HTML5, Vanilla JavaScript (ES Modules) |
-| **Styling** | Vanilla CSS (Minimalist Developer UI ala Linear / Vercel) |
-| **Bundler & Dev Server** | [Vite 8](https://vite.dev/) |
-| **Arsip & Manipulasi Biner** | [`@zip.js/zip.js`](https://gildas-lormeau.github.io/zip.js/) |
-| **APK Signing & Zipalign** | [`@chromeos/android-package-signer`](https://github.com/chromeos/android-package-sign-js) |
-| **Polyfill Node Environment** | `vite-plugin-node-polyfills`, `buffer` |
-| **Typography** | Inter & JetBrains Mono (Google Fonts) |
+| Komponen                      | Teknologi                                                                                 |
+| :---------------------------- | :---------------------------------------------------------------------------------------- |
+| **Frontend Core**             | HTML5, Vanilla JavaScript (ES Modules)                                                    |
+| **Styling**                   | Vanilla CSS (Minimalist Developer UI ala Linear / Vercel)                                 |
+| **Bundler & Dev Server**      | [Vite 8](https://vite.dev/)                                                               |
+| **Arsip & Manipulasi Biner**  | [`@zip.js/zip.js`](https://gildas-lormeau.github.io/zip.js/)                              |
+| **APK Signing & Zipalign**    | [`@chromeos/android-package-signer`](https://github.com/chromeos/android-package-sign-js) |
+| **Polyfill Node Environment** | `vite-plugin-node-polyfills`, `buffer`                                                    |
+| **Typography**                | Inter & JetBrains Mono (Google Fonts)                                                     |
 
 ---
 
 ## 🚀 Cara Menjalankan Proyek di Komputer Lokal
 
 ### Prasyarat
+
 - [Node.js](https://nodejs.org/) versi 18 atau lebih baru.
 - npm (bawaan dari Node.js).
 
 ### Langkah Instalasi
 
 1. **Buka folder proyek** di terminal / command prompt:
+
    ```bash
    cd "d:/Kuliah/Web/RPGM Translator"
    ```
 
 2. **Pasang seluruh dependensi**:
+
    ```bash
    npm install
    ```
 
 3. **Jalankan server pengembangan (Development Server)**:
+
    ```bash
    npm run dev
    ```
 
 4. **Buka aplikasi di browser**:
    Kunjungi alamat lokal yang ditampilkan, biasanya:
+
    ```
    http://localhost:5173/
    ```
@@ -141,13 +146,10 @@ RPGM Translator/
 
 3. **Izinkan Instalasi dari Sumber Tak Dikenal**  
    Bila muncul peringatan keamanan standar Android:
+
    > Ketuk **Setelan (Settings)** ➔ Aktifkan **"Izinkan dari sumber ini"** ➔ Kembali dan ketuk **Instal**.
 
 4. **Buka dan Mainkan**  
    Game akan langsung berjalan dengan dialog cerita, nama item, skill, dan menu dalam Bahasa Indonesia.
 
 ---
-
-## 📄 Lisensi
-
-Proyek ini dibuat untuk keperluan akademik, tugas pengembangan web, dan komunitas pemain game RPG Maker. Bebas dikembangkan dan dimodifikasi lebih lanjut.
