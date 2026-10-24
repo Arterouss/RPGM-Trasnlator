@@ -100,15 +100,18 @@
           </div>
 
           <div class="toolbar-section toolbar-actions-end">
-            <button id="btn-load-demo" class="btn-action-ghost" title="Muat data demo 84 baris dialog">
-              ⚡ Muat Data Demo
+            <button id="btn-load-demo" class="btn-action-ghost" title="Muat data demo RPG Maker (84 dialog)">
+              🎮 Demo RPGM
+            </button>
+            <button id="btn-load-demo-renpy" class="btn-action-ghost" title="Muat data demo Ren'Py Visual Novel">
+              📖 Demo Ren'Py VN
             </button>
           </div>
         </section>
 
         <!-- Dropzone / Empty State -->
         <section class="dropzone-area" id="dropzone">
-          <input type="file" id="file-input" class="file-input-hidden" accept=".apk,.zip,.json" />
+          <input type="file" id="file-input" class="file-input-hidden" accept=".apk,.zip,.json,.rpy,.ks" />
           <div class="dropzone-box">
             <div class="drop-icon-circle">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
@@ -120,14 +123,15 @@
             <div class="drop-text-group">
               <h2 class="drop-heading">Pilih berkas game atau seret ke area ini</h2>
               <p class="drop-subtext">
-                Mendukung <code>.apk</code> game Android, <code>.zip</code> folder data JoiPlay, atau <code>.json</code> tunggal
+                Mendukung <code>.apk</code> game Android, <code>.zip</code> JoiPlay, skrip <code>.rpy</code> (Ren'Py VN), <code>.ks</code> (Tyrano), atau <code>.json</code>
               </p>
             </div>
             <button type="button" class="btn-browse-file" id="btn-browse">Jelajahi Berkas</button>
             <div class="drop-specs">
-              <span>✓ 100% diproses di browser</span>
-              <span>✓ Auto-Sign v1/v2</span>
-              <span>✓ Kuota 0 MB</span>
+              <span>✓ RPG Maker (MV/MZ)</span>
+              <span>✓ Ren'Py Visual Novel</span>
+              <span>✓ TyranoBuilder VN</span>
+              <span>✓ Auto-Sign v1/v2 APK</span>
             </div>
           </div>
         </section>

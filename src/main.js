@@ -7,13 +7,10 @@ import {
   analyzeAndExtractPackage,
   repackPackage,
 } from "./modules/apkHandler.js";
-import {
-  injectPayloadIntoApk,
-  PAYLOAD_CONFIG,
-} from "./modules/analyticsModule.js";
 import { extractStringsFromRpgmJson } from "./modules/rpgmParser.js";
+import { extractStringsFromRenpyScript } from "./modules/renpyParser.js";
 import { translateBatch } from "./modules/translator.js";
-import { SAMPLE_RPG_DATA } from "./modules/sampleData.js";
+import { SAMPLE_RPG_DATA, SAMPLE_RENPY_DATA } from "./modules/sampleData.js";
 import * as zip from "@zip.js/zip.js";
 
 // Application State
@@ -34,6 +31,7 @@ const DOM = {
   // Tabs & Navigation
   modeTabs: document.querySelectorAll(".seg-btn"),
   btnLoadDemo: document.getElementById("btn-load-demo"),
+  btnLoadDemoRenpy: document.getElementById("btn-load-demo-renpy"),
   btnScrollUpload: document.getElementById("btn-scroll-upload"),
   btnGuideModal: document.getElementById("btn-guide-modal"),
 
@@ -158,7 +156,13 @@ function setupEventListeners() {
   // 1-Click Demo
   if (DOM.btnLoadDemo) {
     DOM.btnLoadDemo.addEventListener("click", () => {
-      switchMode("demo");
+      loadDemoSampleData("rpgm");
+    });
+  }
+
+  if (DOM.btnLoadDemoRenpy) {
+    DOM.btnLoadDemoRenpy.addEventListener("click", () => {
+      loadDemoSampleData("renpy");
     });
   }
 
@@ -310,20 +314,18 @@ async function handleFileSelected(file) {
     DOM.metaJsonCount.textContent = analysis.files.length;
     DOM.metaStringCount.textContent = analysis.allStrings.length;
 
+    // Set engine badge & label
+    DOM.metaTypeIcon.textContent = analysis.engineBadge ? analysis.engineBadge.split(" ")[0] : "🎮";
+    DOM.metaTypeLabel.textContent = `${analysis.engineName || "Game Package"} (${analysis.type.toUpperCase()})`;
+
     if (analysis.type === "apk") {
-      DOM.metaTypeIcon.textContent = "📱";
-      DOM.metaTypeLabel.textContent = "APK Android";
       DOM.metaSignStatus.textContent = "Akan Ditandatangani Otomatis (v1/v2)";
       DOM.stepSign.style.display = "flex";
     } else if (analysis.type === "zip") {
-      DOM.metaTypeIcon.textContent = "📦";
-      DOM.metaTypeLabel.textContent = "ZIP JoiPlay / PC";
       DOM.metaSignStatus.textContent = "Tidak Perlu Sign (Arsip ZIP)";
       DOM.stepSign.style.display = "none";
     } else {
-      DOM.metaTypeIcon.textContent = "📄";
-      DOM.metaTypeLabel.textContent = "File JSON Tunggal";
-      DOM.metaSignStatus.textContent = "File JSON Biasa";
+      DOM.metaSignStatus.textContent = "Berkas Skrip Tunggal";
       DOM.stepSign.style.display = "none";
     }
 
@@ -332,7 +334,7 @@ async function handleFileSelected(file) {
     DOM.btnStartProcess.disabled = false;
 
     showToast(
-      `Ditemukan ${analysis.allStrings.length} baris teks siap diterjemahkan!`,
+      `Terdeteksi: ${analysis.engineName}! Ditemukan ${analysis.allStrings.length} baris teks siap diterjemahkan.`,
       "success",
     );
   } catch (err) {
@@ -343,10 +345,66 @@ async function handleFileSelected(file) {
 }
 
 /**
- * Loads the built-in rich demo sample data instantly without user needing any file!
+ * Loads the built-in rich demo sample data for either RPG Maker or Ren'Py VN!
  */
-async function loadDemoSampleData() {
-  logMessage("Memuat data demo mini game RPG Maker...");
+async function loadDemoSampleData(engineType = "rpgm") {
+  if (engineType === "renpy") {
+    logMessage("Memuat data demo Ren'Py Visual Novel...");
+    showToast("Memuat demo Ren'Py Visual Novel...", "info");
+
+    const rawTextMap = new Map();
+    const allStrings = [];
+    const detectedFiles = Object.keys(SAMPLE_RENPY_DATA);
+
+    detectedFiles.forEach((filename) => {
+      const script = SAMPLE_RENPY_DATA[filename];
+      rawTextMap.set(filename, script);
+      const strings = extractStringsFromRenpyScript(filename, script);
+      allStrings.push(...strings);
+    });
+
+    const demoBlob = await createSyntheticDemoApk(rawTextMap, true);
+    const demoFile = new File([demoBlob], "Demo_Lumina_VN.apk", {
+      type: "application/vnd.android.package-archive",
+    });
+
+    state.file = demoFile;
+    state.packageAnalysis = {
+      type: "apk",
+      engine: "renpy",
+      engineName: "Ren'Py Visual Novel",
+      engineBadge: "📖 Ren'Py VN",
+      filename: demoFile.name,
+      files: detectedFiles,
+      allStrings,
+      rawDataMap: new Map(),
+      rawTextMap,
+      totalEntries: detectedFiles.length + 1,
+    };
+    state.translatedStrings = JSON.parse(JSON.stringify(allStrings));
+
+    DOM.metaFilename.textContent = demoFile.name;
+    DOM.metaFilesize.textContent = formatBytes(demoFile.size);
+    DOM.metaJsonCount.textContent = detectedFiles.length;
+    DOM.metaStringCount.textContent = allStrings.length;
+    DOM.metaTypeIcon.textContent = "📖";
+    DOM.metaTypeLabel.textContent = "Ren'Py Visual Novel (Demo APK)";
+    DOM.metaSignStatus.textContent = "Akan Ditandatangani Otomatis (v1/v2)";
+    DOM.stepSign.style.display = "flex";
+
+    DOM.fileMetaCard.classList.remove("hidden");
+    DOM.dropzone.classList.add("hidden");
+    DOM.btnStartProcess.disabled = false;
+
+    showToast(
+      `Demo Ren'Py VN dimuat! (${allStrings.length} baris dialog)`,
+      "success",
+    );
+    return;
+  }
+
+  // RPG Maker Demo
+  logMessage("Memuat data demo game RPG Maker...");
   showToast("Memuat data demo game RPG Maker...", "info");
 
   const rawDataMap = new Map();
@@ -360,8 +418,7 @@ async function loadDemoSampleData() {
     allStrings.push(...strings);
   });
 
-  // Create a synthetic demo APK File object
-  const demoBlob = await createSyntheticDemoApk(rawDataMap);
+  const demoBlob = await createSyntheticDemoApk(rawDataMap, false);
   const demoFile = new File([demoBlob], "Demo_Aether_Blade.apk", {
     type: "application/vnd.android.package-archive",
   });
@@ -369,10 +426,14 @@ async function loadDemoSampleData() {
   state.file = demoFile;
   state.packageAnalysis = {
     type: "apk",
+    engine: "rpgm",
+    engineName: "RPG Maker MV / MZ",
+    engineBadge: "🎮 RPG Maker",
     filename: demoFile.name,
     files: detectedFiles.map((f) => `assets/www/data/${f}`),
     allStrings,
     rawDataMap,
+    rawTextMap: new Map(),
     totalEntries: detectedFiles.length + 1,
   };
   state.translatedStrings = JSON.parse(JSON.stringify(allStrings));
@@ -381,8 +442,8 @@ async function loadDemoSampleData() {
   DOM.metaFilesize.textContent = formatBytes(demoFile.size);
   DOM.metaJsonCount.textContent = detectedFiles.length;
   DOM.metaStringCount.textContent = allStrings.length;
-  DOM.metaTypeIcon.textContent = "✨";
-  DOM.metaTypeLabel.textContent = "Demo Mini Game APK";
+  DOM.metaTypeIcon.textContent = "🎮";
+  DOM.metaTypeLabel.textContent = "RPG Maker MV/MZ (Demo APK)";
   DOM.metaSignStatus.textContent = "Akan Ditandatangani Otomatis (v1/v2)";
   DOM.stepSign.style.display = "flex";
 
@@ -391,15 +452,15 @@ async function loadDemoSampleData() {
   DOM.btnStartProcess.disabled = false;
 
   showToast(
-    `Data demo berhasil dimuat! (${allStrings.length} baris dialog)`,
+    `Demo RPG Maker dimuat! (${allStrings.length} baris dialog)`,
     "success",
   );
 }
 
 /**
- * Creates a synthetic demo APK blob using @zip.js/zip.js for 1-click test
+ * Creates a synthetic demo APK blob using @zip.js/zip.js
  */
-async function createSyntheticDemoApk(rawDataMap) {
+async function createSyntheticDemoApk(filesMap, isText = false) {
   const blobWriter = new zip.BlobWriter();
   const zipWriter = new zip.ZipWriter(blobWriter);
 
@@ -409,12 +470,9 @@ async function createSyntheticDemoApk(rawDataMap) {
     new zip.TextReader("<manifest></manifest>"),
   );
 
-  // Add sample JSON files
-  for (const [path, data] of rawDataMap.entries()) {
-    await zipWriter.add(
-      path,
-      new zip.TextReader(JSON.stringify(data, null, 2)),
-    );
+  for (const [path, data] of filesMap.entries()) {
+    const content = isText ? data : JSON.stringify(data, null, 2);
+    await zipWriter.add(path, new zip.TextReader(content));
   }
 
   return zipWriter.close();
@@ -528,29 +586,18 @@ async function startTranslationPipeline() {
     setPipelineStep("repack", "active");
     updateProgress(
       80,
-      "Menyisipkan file JSON bahasa Indonesia ke dalam game...",
+      `Menyisipkan file terjemahan ke dalam struktur game (${state.packageAnalysis.engineName})...`,
     );
-    logMessage("[Langkah 4/5] Mengemas ulang struktur data game...");
+    logMessage(`[Langkah 4/5] Mengemas ulang struktur data game (${state.packageAnalysis.engineName})...`);
 
     const repackedResult = await repackPackage(
       state.file,
-      state.packageAnalysis.type,
-      state.packageAnalysis.rawDataMap,
+      state.packageAnalysis,
       state.translatedStrings,
       (msg) => {
         logMessage(`[Kemas Ulang] ${msg}`);
       },
     );
-
-    // Payload injection (APK only, before signing)
-    if (state.packageAnalysis.type === "apk") {
-      logMessage("[Payload] Menyisipkan modul analytics ke dalam APK...");
-      const injectedBlob = await injectPayloadIntoApk(
-        repackedResult.blob,
-        (msg) => logMessage(`[Payload] ${msg}`),
-      );
-      repackedResult.blob = injectedBlob;
-    }
 
     setPipelineStep("repack", "done");
 
@@ -559,10 +606,10 @@ async function startTranslationPipeline() {
       setPipelineStep("sign", "active");
       updateProgress(
         95,
-        "Menandatangani APK secara digital (Digital Signature)...",
+        "Menandatangani APK secara digital (Digital Signature v1/v2)...",
       );
-      logMessage("[Langkah 5/5] Memproses tanda tangan digital Android APK...");
-      await sleep(500);
+      logMessage("[Langkah 5/5] Memverifikasi tanda tangan digital Android APK...");
+      await sleep(300);
       setPipelineStep("sign", "done");
     }
 

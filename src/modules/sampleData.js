@@ -1,6 +1,9 @@
 /**
- * Sample RPG Maker MV / MZ Data Pack
- * Used for instant live testing & demonstration without needing an external APK/ZIP file.
+ * Multi-Engine Sample Game Data Packs
+ * Supports testing:
+ * 1. RPG Maker MV / MZ (JSON data)
+ * 2. Ren'Py Visual Novel (script.rpy)
+ * 3. TyranoBuilder / KAG VN (scene1.ks)
  */
 
 export const SAMPLE_RPG_DATA = {
@@ -177,4 +180,50 @@ export const SAMPLE_RPG_DATA = {
       },
     ],
   },
+};
+
+export const SAMPLE_RENPY_DATA = {
+  'game/script.rpy': `define e = Character("Eileen", color="#c8ffc8")
+define p = Character("[player_name]", color="#ffffff")
+
+label start:
+    scene bg meadow
+    with fade
+
+    "The morning breeze felt crisp as sunlight filtered through the grand canopy."
+
+    show eileen happy at center
+    with dissolve
+
+    e "Good morning, [player_name]! Welcome to our visual novel academy."
+    e "Are you ready to begin your magical study expedition today?"
+
+    menu:
+        "I have been preparing all week!":
+            e "Splendid! Your enthusiasm will surely guide you to greatness."
+        "To be honest, I feel a little nervous...":
+            e "Do not fret, [player_name]. I will be right beside you every step of the way."
+
+    "And so, a memorable journey began in the kingdom of Lumina."
+
+    return
+`,
+  'game/options.rpy': `define config.name = _("Memories of Lumina")
+define gui.about = _("An enchanting Visual Novel adventure created with Ren'Py.")
+`,
+};
+
+export const SAMPLE_TYRANO_DATA = {
+  'data/scenario/scene1.ks': `; TyranoBuilder Scenario
+[cm]
+[bg storage="room.jpg" time="500"]
+
+#Eileen
+Good morning, traveler! Welcome to our visual novel realm.[p]
+The wind whispers ancient secrets among the trees.[l][r]
+
+[glink color="black" text="Enter the Magic Academy" target="*scene_academy"]
+[glink color="black" text="Explore the Forest Path" target="*scene_forest"]
+[s]
+`,
 };

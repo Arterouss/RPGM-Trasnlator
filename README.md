@@ -1,33 +1,43 @@
-# RPGM Translator — In-Browser Android APK Localizer
+# Universal Game & VN Auto-Translator — In-Browser Android APK Localizer
 
-Aplikasi web modern untuk menerjemahkan game **RPG Maker (MV & MZ)** ke dalam Bahasa Indonesia secara otomatis, cepat, dan hemat kuota. Seluruh pemrosesan arsip game dan penandatanganan digital APK dilakukan **100% di sisi klien (Client-Side)** di dalam browser pengguna.
+Aplikasi web modern untuk menerjemahkan game **RPG Maker (MV & MZ)**, **Ren'Py Visual Novel**, **TyranoBuilder / KAG**, dan **Game Indie (JSON)** ke dalam Bahasa Indonesia secara otomatis, cepat, dan hemat kuota. Seluruh pemrosesan arsip game dan penandatanganan digital APK dilakukan **100% di sisi klien (Client-Side)** di dalam browser pengguna.
 
 ---
 
 ## 🌟 Fitur Utama
 
+- **Universal Multi-Engine Auto-Detection (Deteksi Otomatis)**  
+  Sistem secara otomatis mendeteksi arsitektur engine game saat berkas dimasukkan:
+  - 🎮 **RPG Maker (MV / MZ)**: Memindai `Map*.json`, `Actors.json`, `System.json` di seluruh subfolder.
+  - 📖 **Ren'Py Visual Novel**: Memindai skrip `.rpy` (`script.rpy`, `options.rpy`, dll.), mengekstrak percakapan berkarakter, narasi, dan menu pilihan.
+  - 🎭 **TyranoBuilder / KAG VN**: Memindai skrip `.ks` skenario visual novel.
+  - 📄 **Generic Indie Game Localization**: Memindai file `en.json`, `strings.json`, `dialogue.json`.
+
 - **100% Client-Side Processing (0 MB Kuota Terbuang)**  
-  File APK sebesar 500 MB – 1 GB tidak diunggah ke server internet. Browser membuka arsip APK secara lokal menggunakan `@zip.js/zip.js`, hanya membaca teks percakapan JSON di folder `assets/www/data/`, dan hanya mengirim baris teks untuk diterjemahkan.
+  File APK sebesar 500 MB – 1 GB tidak diunggah ke server internet. Browser membuka arsip APK secara lokal menggunakan `@zip.js/zip.js`, hanya membaca teks percakapan, dan hanya mengirim baris teks untuk diterjemahkan.
 
 - **In-Browser APK Digital Signer (Auto-Sign v1/v2)**  
   APK yang telah dimodifikasi otomatis dibersihkan dari sertifikat lama (`META-INF/`) dan ditandatangani ulang (_re-signed_) langsung di browser menggunakan `@chromeos/android-package-signer` (mendukung Scheme v1, v2, dan Zipalign 4-byte). File APK yang dihasilkan valid dan siap diinstal langsung di HP Android.
 
-- **Perlindungan Sintaks & Escape Code RPG Maker**  
-  Dilengkapi parser khusus yang melindungi kode-kode format game seperti `\N[1]` (nama karakter), `\C[2]` (warna teks), `\V[n]` (variabel), dan `\I[n]` (ikon) dengan sistem masking agar tidak dirusak atau salah diartikan oleh mesin penerjemah.
+- **Perlindungan Sintaks & Escape Code Antar Engine**  
+  Dilengkapi parser khusus yang melindungi kode-kode format game:
+  - RPG Maker: `\N[1]`, `\C[2]`, `\V[n]`, `\I[n]`
+  - Ren'Py: `{b}`, `{/b}`, `{color=...}`, `[player_name]`, `\n`
+  - TyranoBuilder: `[p]`, `[l]`, `[r]`, `[glink]`, `[cm]`
 
 - **Pilihan Mesin Penerjemah (Multi-Engine)**:
-  1. **Google Gemini AI (Gemini 2.5 Flash)**: Terjemahan berkualitas tinggi yang memahami konteks dialog game fantasi/RPG.
+  1. **Google Gemini AI (Gemini 2.5 Flash)**: Terjemahan berkualitas tinggi yang memahami konteks dialog game fantasi & visual novel.
   2. **MyMemory Web API**: Penerjemahan gratis langsung tanpa perlu API key.
   3. **Offline Mock Simulator**: Simulasi cepat untuk demonstrasi dan uji coba tanpa koneksi internet.
 
 - **Studio Editor & Pratinjau Teks (Side-by-Side)**  
-  Tabel perbandingan interaktif teks asli vs bahasa Indonesia dengan pencarian instan, filter kategori (Dialog NPC, Item, Skill, Sistem), dan kemampuan mengedit teks terjemahan secara manual sebelum mengekspor file.
+  Tabel perbandingan interaktif teks asli vs bahasa Indonesia dengan pencarian instan, filter kategori (Dialog, Pilihan Menu, Item, Sistem), dan kemampuan mengedit teks terjemahan secara manual sebelum mengekspor file.
 
 - **Dukungan Berbagai Format Masukan**:
   - File APK Android (`.apk`)
-  - Arsip ZIP data game / JoiPlay (`.zip`)
-  - File JSON RPG Maker individual (`.json`, misal `Map001.json`, `Actors.json`)
-  - **Quick Demo 1-Klik**: Dataset game mini built-in untuk pengujian langsung tanpa perlu menyiapkan file game.
+  - Arsip ZIP game / JoiPlay (`.zip`)
+  - Skrip Ren'Py (`.rpy`), TyranoBuilder (`.ks`), atau File JSON (`.json`)
+  - **Quick Demo 1-Klik**: Dataset bawaan untuk RPG Maker dan Ren'Py Visual Novel.
 
 - **Kamus Istilah Khusus (Custom Glossary)**  
   Memungkinkan pengguna mengunci terjemahan istilah tertentu (contoh: `Demon Lord` ➔ `Raja Iblis`, `Potion` ➔ `Ramuan`).
