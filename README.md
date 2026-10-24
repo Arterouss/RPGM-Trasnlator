@@ -44,20 +44,6 @@ Aplikasi web modern untuk menerjemahkan game **RPG Maker (MV & MZ)**, **Ren'Py V
 
 ---
 
-## 🛠️ Teknologi yang Digunakan
-
-| Komponen                      | Teknologi                                                                                 |
-| :---------------------------- | :---------------------------------------------------------------------------------------- |
-| **Frontend Core**             | HTML5, Vanilla JavaScript (ES Modules)                                                    |
-| **Styling**                   | Vanilla CSS (Minimalist Developer UI ala Linear / Vercel)                                 |
-| **Bundler & Dev Server**      | [Vite 8](https://vite.dev/)                                                               |
-| **Arsip & Manipulasi Biner**  | [`@zip.js/zip.js`](https://gildas-lormeau.github.io/zip.js/)                              |
-| **APK Signing & Zipalign**    | [`@chromeos/android-package-signer`](https://github.com/chromeos/android-package-sign-js) |
-| **Polyfill Node Environment** | `vite-plugin-node-polyfills`, `buffer`                                                    |
-| **Typography**                | Inter & JetBrains Mono (Google Fonts)                                                     |
-
----
-
 ## 🚀 Cara Menjalankan Proyek di Komputer Lokal
 
 ### Prasyarat
@@ -97,29 +83,6 @@ Aplikasi web modern untuk menerjemahkan game **RPG Maker (MV & MZ)**, **Ren'Py V
    npm run build
    ```
    Hasil build siap deploy akan tersimpan di dalam folder `dist/`.
-
----
-
-## 📂 Struktur Direktori Proyek
-
-```
-RPGM Translator/
-├── dist/                      # Hasil kompilasi produksi
-├── public/                    # Aset statis publik (favicon, hero, dll.)
-├── src/
-│   ├── modules/
-│   │   ├── apkHandler.js      # Ekstraksi dan pengemasan ulang arsip APK/ZIP
-│   │   ├── apkSigner.js       # Penandatanganan digital paket APK di browser
-│   │   ├── rpgmParser.js      # Parser JSON RPG Maker MV/MZ & masking kode
-│   │   ├── sampleData.js      # Dataset game mini untuk fitur Quick Demo
-│   │   └── translator.js      # Pipeline terjemahan (Gemini AI, MyMemory, Simulator)
-│   ├── main.js                # Controller utama aplikasi dan event listener
-│   └── style.css              # Sistem desain CSS minimalis dan responsif
-├── index.html                 # Struktur markup utama aplikasi
-├── package.json               # Konfigurasi dependensi dan skrip proyek
-├── vite.config.js             # Konfigurasi bundler Vite dan Node polyfills
-└── README.md                  # Dokumentasi proyek
-```
 
 ---
 
