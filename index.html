@@ -73,10 +73,12 @@
             <div class="engine-row">
               <select id="select-provider" class="select-clean">
                 <option value="gemini" selected>Google Gemini 2.5 Flash</option>
+                <option value="openai">OpenAI Compatible (DeepSeek, OpenRouter, Groq, dll.)</option>
                 <option value="mymemory">MyMemory Web API (Free)</option>
                 <option value="simulator">Offline Mock Simulator</option>
               </select>
 
+              <!-- Gemini Key Container -->
               <div id="gemini-key-container" class="api-key-box">
                 <input
                   type="password"
@@ -95,6 +97,47 @@
                   class="key-hint-link"
                   title="Dapatkan key gratis dari Google AI Studio"
                 >Get Key ↗</a>
+              </div>
+
+              <!-- OpenAI Compatible Config Container -->
+              <div id="openai-config-container" class="openai-config-group hidden">
+                <div class="api-key-box" title="Base URL API (contoh: https://api.openai.com/v1 atau https://api.deepseek.com/v1)">
+                  <input
+                    type="text"
+                    id="input-openai-base-url"
+                    class="input-clean input-base-url"
+                    placeholder="Base URL: https://api.openai.com/v1"
+                    autocomplete="off"
+                  />
+                </div>
+                <div class="api-key-box" title="API Key Anda">
+                  <input
+                    type="password"
+                    id="input-openai-key"
+                    class="input-clean input-key"
+                    placeholder="API Key (sk-...)"
+                    autocomplete="off"
+                  />
+                  <button type="button" id="btn-toggle-openai-key" class="btn-text-icon" title="Tampilkan Key">
+                    👁
+                  </button>
+                </div>
+                <div class="api-key-box" title="Nama Model (contoh: gpt-4o-mini, deepseek-chat, llama-3.3-70b-versatile)">
+                  <input
+                    type="text"
+                    id="input-openai-model"
+                    class="input-clean input-model"
+                    placeholder="Model: gpt-4o-mini"
+                    autocomplete="off"
+                  />
+                </div>
+                <div class="preset-chips">
+                  <button type="button" class="chip-btn" data-preset="openai" title="OpenAI (gpt-4o-mini)">OpenAI</button>
+                  <button type="button" class="chip-btn" data-preset="deepseek" title="DeepSeek (deepseek-chat)">DeepSeek</button>
+                  <button type="button" class="chip-btn" data-preset="openrouter" title="OpenRouter (deepseek/deepseek-chat)">OpenRouter</button>
+                  <button type="button" class="chip-btn" data-preset="groq" title="Groq (llama-3.3-70b-versatile)">Groq</button>
+                  <button type="button" class="chip-btn" data-preset="ollama" title="Local Ollama (localhost:11434)">Ollama</button>
+                </div>
               </div>
             </div>
           </div>
@@ -228,7 +271,7 @@
               <div class="result-meta-tags">
                 <span class="tag-meta" id="res-filename">-</span>
                 <span class="tag-meta" id="res-filesize">-</span>
-                <span class="tag-meta tag-success" id="res-sign-badge">✓ Signed (v1/v2)</span>
+                <span class="tag-meta tag-success" id="res-sign-badge">✓ Signed (v1/v2/v3 + Zipalign)</span>
               </div>
             </div>
           </div>

@@ -72,21 +72,134 @@ const RPG_SIMULATOR_DICT = {
 /**
  * Translates an array of strings using the selected provider.
  * @param {Array<string>} textList - List of masked strings to translate.
- * @param {Object} options - { provider: 'gemini'|'mymemory'|'simulator', apiKey, glossary, targetLang, onProgress }
+ * @param {Object} options - { provider: 'gemini'|'openai'|'mymemory'|'simulator', apiKey, baseUrl, model, glossary, onProgress }
  */
 export async function translateBatch(textList, options = {}) {
-  const { provider = 'simulator', apiKey = '', glossary = {}, onProgress = () => {} } = options;
+  const {
+    provider = 'simulator',
+    apiKey = '',
+    baseUrl = 'https://api.openai.com/v1',
+    model = 'gpt-4o-mini',
+    glossary = {},
+    onProgress = () => {},
+  } = options;
 
   if (!textList || !textList.length) return [];
 
   if (provider === 'gemini' && apiKey) {
     return translateWithGemini(textList, apiKey, glossary, onProgress);
+  } else if (provider === 'openai') {
+    return translateWithOpenAICompatible(textList, {
+      apiKey,
+      baseUrl,
+      model,
+      glossary,
+      onProgress,
+    });
   } else if (provider === 'mymemory') {
     return translateWithMyMemory(textList, glossary, onProgress);
   } else {
     // Simulator mode (instant & offline)
     return simulateTranslate(textList, glossary, onProgress);
   }
+}
+
+/**
+ * Translates texts using OpenAI-compatible Chat Completions API
+ * Supports: OpenAI, DeepSeek, OpenRouter, Groq, Local Ollama, LM Studio, vLLM, etc.
+ */
+async function translateWithOpenAICompatible(textList, options = {}) {
+  const {
+    apiKey = '',
+    baseUrl = 'https://api.openai.com/v1',
+    model = 'gpt-4o-mini',
+    glossary = {},
+    onProgress = () => {},
+  } = options;
+
+  const BATCH_SIZE = 25;
+  const results = [];
+  const total = textList.length;
+
+  // Normalize base URL endpoint: ensure /chat/completions suffix
+  let endpoint = (baseUrl || 'https://api.openai.com/v1').trim().replace(/\/+$/, '');
+  if (!endpoint.endsWith('/chat/completions')) {
+    endpoint = `${endpoint}/chat/completions`;
+  }
+
+  const modelName = (model || 'gpt-4o-mini').trim();
+
+  for (let i = 0; i < total; i += BATCH_SIZE) {
+    const chunk = textList.slice(i, i + BATCH_SIZE);
+
+    const glossaryGuide = Object.keys(glossary).length
+      ? `\nGlossary rules to strictly respect:\n${JSON.stringify(glossary, null, 2)}`
+      : '';
+
+    const systemPrompt = `You are a professional video game localization translator specializing in Japanese and English RPG / Visual Novel games.
+Translate the input list of texts into natural, immersive Bahasa Indonesia suitable for a fantasy RPG or visual novel.
+IMPORTANT RULES:
+1. PRESERVE ALL PLACEHOLDER TAGS EXACTLY as they appear, e.g. [[TAG_0]], [[TAG_1]], etc. Do not translate, remove, or modify them.
+2. Maintain fantasy RPG / VN gaming conventions (e.g. keep HP, MP, TP, Exp, Level, G, Quest as standard or use established Indonesian gaming terminology).
+3. Translate dialogues with appropriate character tone (respectful elders, enthusiastic heroes, mysterious villains).
+4. Output MUST be ONLY a valid JSON array of strings corresponding 1:1 in the exact same order and length as input. Do not include markdown codeblocks or explanation.
+${glossaryGuide}`;
+
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    if (apiKey && apiKey.trim()) {
+      headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+    }
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: modelName,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: JSON.stringify(chunk) },
+          ],
+          temperature: 0.3,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error?.message || `OpenAI Compatible API Error: HTTP ${response.status} (${response.statusText})`
+        );
+      }
+
+      const data = await response.json();
+      const rawContent = data.choices?.[0]?.message?.content || '';
+      let translatedChunk = [];
+
+      try {
+        translatedChunk = JSON.parse(rawContent);
+      } catch {
+        const cleaned = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
+        translatedChunk = JSON.parse(cleaned);
+      }
+
+      if (Array.isArray(translatedChunk) && translatedChunk.length === chunk.length) {
+        results.push(...translatedChunk);
+      } else {
+        console.warn('OpenAI format mismatch, falling back to simulator for this batch');
+        chunk.forEach((item) => results.push(simulateSingleText(item, glossary)));
+      }
+    } catch (err) {
+      console.warn(`OpenAI Compatible batch error (falling back to simulator):`, err.message);
+      chunk.forEach((item) => results.push(simulateSingleText(item, glossary)));
+    }
+
+    onProgress(Math.min(i + chunk.length, total), total);
+    await new Promise((r) => setTimeout(r, 200));
+  }
+
+  return results;
 }
 
 /**

@@ -366,7 +366,7 @@ export async function repackPackage(
   for (let i = 0; i < total; i++) {
     const entry = entries[i];
 
-    // If it's an APK, skip old META-INF signature files for clean re-signing
+    // Skip old signatures for clean re-signing
     if (
       fileType === 'apk' &&
       (/^META-INF\/.*\.(SF|RSA|DSA|EC)$/i.test(entry.filename) ||
@@ -375,16 +375,33 @@ export async function repackPackage(
       continue;
     }
 
+    // Handle directory entries explicitly
+    if (entry.directory) {
+      await zipWriter.add(entry.filename, null, { directory: true });
+      continue;
+    }
+
+    // ANDROID REQUIREMENTS FOR APK PARSING:
+    // 1. resources.arsc MUST be uncompressed (level: 0 / STORE) or Android AssetManager fails to parse
+    // 2. Native libraries (.so) should be STORED (level: 0)
+    // 3. Keep original compression if the entry was uncompressed in the source APK
+    const shouldStoreUncompressed =
+      entry.filename === 'resources.arsc' ||
+      entry.filename.endsWith('.so') ||
+      entry.compressionMethod === 0;
+
+    const zipOptions = shouldStoreUncompressed ? { level: 0 } : { level: 5 };
+
     if (updatedDataMap.has(entry.filename)) {
       onProgress(`Menyisipkan terjemahan: ${entry.filename.split('/').pop()}...`);
       const newContent = updatedDataMap.get(entry.filename);
-      await zipWriter.add(entry.filename, new zip.TextReader(newContent));
+      await zipWriter.add(entry.filename, new zip.TextReader(newContent), zipOptions);
     } else {
       if (i % 25 === 0 || i === total - 1) {
         onProgress(`Menyusun ulang file game (${Math.round(((i + 1) / total) * 100)}%)...`);
       }
       const dataBlob = await entry.getData(new zip.BlobWriter());
-      await zipWriter.add(entry.filename, new zip.BlobReader(dataBlob));
+      await zipWriter.add(entry.filename, new zip.BlobReader(dataBlob), zipOptions);
     }
   }
 
@@ -403,7 +420,7 @@ export async function repackPackage(
   }
 
   // If APK, sign it directly in the browser!
-  onProgress('Memulai penandatanganan digital APK (Auto-Sign v1/v2)...');
+  onProgress('Memulai penandatanganan digital APK (Auto-Sign Scheme v1, v2, v3 + 4-byte Zipalign)...');
   const signedBlob = await signApkInBrowser(unsignedBlob, onProgress);
   const outputName = originalFile.name.replace(/\.apk$/i, '_id.apk');
 

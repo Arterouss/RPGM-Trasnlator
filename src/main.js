@@ -40,6 +40,12 @@ const DOM = {
   geminiKeyContainer: document.getElementById("gemini-key-container"),
   inputApiKey: document.getElementById("input-api-key"),
   btnToggleKeyVis: document.getElementById("btn-toggle-key-visibility"),
+  openaiConfigContainer: document.getElementById("openai-config-container"),
+  inputOpenaiBaseUrl: document.getElementById("input-openai-base-url"),
+  inputOpenaiKey: document.getElementById("input-openai-key"),
+  btnToggleOpenaiKey: document.getElementById("btn-toggle-openai-key"),
+  inputOpenaiModel: document.getElementById("input-openai-model"),
+  presetChips: document.querySelectorAll(".preset-chips .chip-btn"),
   btnOpenGlossary: document.getElementById("btn-open-glossary"),
   glossaryCount: document.getElementById("glossary-count"),
 
@@ -115,11 +121,27 @@ function init() {
 }
 
 function loadSavedSettings() {
+  // Load saved Provider
+  const savedProvider = localStorage.getItem("rpgm_provider") || "gemini";
+  if (DOM.selectProvider) {
+    DOM.selectProvider.value = savedProvider;
+    updateProviderUI(savedProvider);
+  }
+
   // Load saved Gemini API Key
   const savedKey = localStorage.getItem("rpgm_gemini_api_key");
   if (savedKey) {
     DOM.inputApiKey.value = savedKey;
   }
+
+  // Load saved OpenAI Compatible settings
+  const savedBaseUrl = localStorage.getItem("rpgm_openai_base_url") || "https://api.openai.com/v1";
+  const savedOpenaiKey = localStorage.getItem("rpgm_openai_key") || "";
+  const savedModel = localStorage.getItem("rpgm_openai_model") || "gpt-4o-mini";
+
+  if (DOM.inputOpenaiBaseUrl) DOM.inputOpenaiBaseUrl.value = savedBaseUrl;
+  if (DOM.inputOpenaiKey) DOM.inputOpenaiKey.value = savedOpenaiKey;
+  if (DOM.inputOpenaiModel) DOM.inputOpenaiModel.value = savedModel;
 
   // Load saved Glossary
   try {
@@ -129,6 +151,19 @@ function loadSavedSettings() {
     }
   } catch (e) {
     state.glossary = {};
+  }
+}
+
+function updateProviderUI(prov) {
+  if (DOM.geminiKeyContainer) {
+    DOM.geminiKeyContainer.style.display = prov === "gemini" ? "inline-flex" : "none";
+  }
+  if (DOM.openaiConfigContainer) {
+    if (prov === "openai") {
+      DOM.openaiConfigContainer.classList.remove("hidden");
+    } else {
+      DOM.openaiConfigContainer.classList.add("hidden");
+    }
   }
 }
 
@@ -169,18 +204,81 @@ function setupEventListeners() {
   // Provider selector change
   DOM.selectProvider.addEventListener("change", () => {
     const prov = DOM.selectProvider.value;
-    DOM.geminiKeyContainer.style.display = prov === "gemini" ? "flex" : "none";
+    updateProviderUI(prov);
+    localStorage.setItem("rpgm_provider", prov);
   });
 
-  // Save API key on change
+  // Save Gemini API key on change
   DOM.inputApiKey.addEventListener("input", () => {
     localStorage.setItem("rpgm_gemini_api_key", DOM.inputApiKey.value.trim());
   });
 
-  // Toggle API key visibility
+  // Toggle Gemini API key visibility
   DOM.btnToggleKeyVis.addEventListener("click", () => {
     const type = DOM.inputApiKey.type === "password" ? "text" : "password";
     DOM.inputApiKey.type = type;
+  });
+
+  // Save OpenAI compatible settings on change
+  if (DOM.inputOpenaiBaseUrl) {
+    DOM.inputOpenaiBaseUrl.addEventListener("input", () => {
+      localStorage.setItem("rpgm_openai_base_url", DOM.inputOpenaiBaseUrl.value.trim());
+    });
+  }
+
+  if (DOM.inputOpenaiKey) {
+    DOM.inputOpenaiKey.addEventListener("input", () => {
+      localStorage.setItem("rpgm_openai_key", DOM.inputOpenaiKey.value.trim());
+    });
+  }
+
+  if (DOM.inputOpenaiModel) {
+    DOM.inputOpenaiModel.addEventListener("input", () => {
+      localStorage.setItem("rpgm_openai_model", DOM.inputOpenaiModel.value.trim());
+    });
+  }
+
+  // Toggle OpenAI API key visibility
+  if (DOM.btnToggleOpenaiKey) {
+    DOM.btnToggleOpenaiKey.addEventListener("click", () => {
+      const type = DOM.inputOpenaiKey.type === "password" ? "text" : "password";
+      DOM.inputOpenaiKey.type = type;
+    });
+  }
+
+  // Preset Chips for OpenAI Compatible
+  DOM.presetChips.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const preset = btn.dataset.preset;
+      DOM.presetChips.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      let baseUrl = "https://api.openai.com/v1";
+      let model = "gpt-4o-mini";
+
+      if (preset === "openai") {
+        baseUrl = "https://api.openai.com/v1";
+        model = "gpt-4o-mini";
+      } else if (preset === "deepseek") {
+        baseUrl = "https://api.deepseek.com/v1";
+        model = "deepseek-chat";
+      } else if (preset === "openrouter") {
+        baseUrl = "https://openrouter.ai/api/v1";
+        model = "deepseek/deepseek-chat";
+      } else if (preset === "groq") {
+        baseUrl = "https://api.groq.com/openai/v1";
+        model = "llama-3.3-70b-versatile";
+      } else if (preset === "ollama") {
+        baseUrl = "http://localhost:11434/v1";
+        model = "llama3.2";
+      }
+
+      DOM.inputOpenaiBaseUrl.value = baseUrl;
+      DOM.inputOpenaiModel.value = model;
+      localStorage.setItem("rpgm_openai_base_url", baseUrl);
+      localStorage.setItem("rpgm_openai_model", model);
+      showToast(`Preset ${btn.textContent} diterapkan (${model})`, "info");
+    });
   });
 
   // Dropzone drag & drop
@@ -515,13 +613,33 @@ async function startTranslationPipeline() {
 
   const provider = DOM.selectProvider.value;
   const apiKey = DOM.inputApiKey.value.trim();
+  const openaiBaseUrl = DOM.inputOpenaiBaseUrl?.value.trim() || "https://api.openai.com/v1";
+  const openaiKey = DOM.inputOpenaiKey?.value.trim() || "";
+  const openaiModel = DOM.inputOpenaiModel?.value.trim() || "gpt-4o-mini";
 
   if (provider === "gemini" && !apiKey) {
     showToast(
-      "Harap masukkan Gemini API Key terlebih dahulu, atau pilih opsi Simulator / MyMemory!",
+      "Harap masukkan Gemini API Key terlebih dahulu, atau pilih opsi lain!",
       "error",
     );
     DOM.inputApiKey.focus();
+    state.isProcessing = false;
+    DOM.btnStartProcess.disabled = false;
+    DOM.btnResetFile.disabled = false;
+    return;
+  }
+
+  const isLocalEndpoint =
+    openaiBaseUrl.includes("localhost") ||
+    openaiBaseUrl.includes("127.0.0.1") ||
+    openaiBaseUrl.includes("0.0.0.0");
+
+  if (provider === "openai" && !openaiKey && !isLocalEndpoint) {
+    showToast(
+      "Harap masukkan API Key untuk endpoint OpenAI Compatible (atau gunakan server lokal jika tanpa key)!",
+      "error",
+    );
+    DOM.inputOpenaiKey.focus();
     state.isProcessing = false;
     DOM.btnStartProcess.disabled = false;
     DOM.btnResetFile.disabled = false;
@@ -550,10 +668,10 @@ async function startTranslationPipeline() {
 
     // STEP 3: Translate with AI / Provider
     setPipelineStep("translate", "active");
-    updateProgress(20, `Menerjemahkan dengan ${provider.toUpperCase()}...`);
-    logMessage(
-      `[Langkah 3/5] Mengirim teks ke mesin ${provider.toUpperCase()}...`,
-    );
+    const providerLabel =
+      provider === "openai" ? `OpenAI (${openaiModel})` : provider.toUpperCase();
+    updateProgress(20, `Menerjemahkan dengan ${providerLabel}...`);
+    logMessage(`[Langkah 3/5] Mengirim teks ke mesin ${providerLabel}...`);
 
     const textToTranslate = state.packageAnalysis.allStrings.map(
       (s) => s.maskedText,
@@ -562,7 +680,9 @@ async function startTranslationPipeline() {
 
     const translatedResults = await translateBatch(textToTranslate, {
       provider,
-      apiKey,
+      apiKey: provider === "gemini" ? apiKey : openaiKey,
+      baseUrl: openaiBaseUrl,
+      model: openaiModel,
       glossary: state.glossary,
       onProgress: (current, total) => {
         const pct = Math.round(20 + (current / total) * 55); // 20% to 75%
@@ -703,7 +823,7 @@ function renderResultCard(result) {
   DOM.resFilesize.textContent = formatBytes(result.blob.size);
 
   if (result.isSigned) {
-    DOM.resSignBadge.textContent = "✓ Valid Android Digital Signature (v1/v2)";
+    DOM.resSignBadge.textContent = "✓ Valid Android Signature (v1 + v2 + v3 Scheme & 4-byte Zipaligned)";
     DOM.resSignBadge.className = "detail-val text-success";
     DOM.downloadBtnText.textContent = `Download APK Bahasa Indonesia (${formatBytes(result.blob.size)})`;
   } else {

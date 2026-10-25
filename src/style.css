@@ -288,8 +288,55 @@ body {
   width: 140px;
 }
 
-.input-key::placeholder {
+.input-base-url {
+  width: 195px;
+}
+
+.input-model {
+  width: 130px;
+}
+
+.input-key::placeholder,
+.input-base-url::placeholder,
+.input-model::placeholder {
   color: var(--text-muted);
+}
+
+.openai-config-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.preset-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chip-btn {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 3px 7px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: var(--trans-fast);
+}
+
+.chip-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+
+.chip-btn.active {
+  background: var(--accent-cta-bg);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
 }
 
 .btn-text-icon {
@@ -1222,9 +1269,30 @@ html, body {
     height: 34px;
   }
 
-  .input-key {
+  .input-key,
+  .input-base-url,
+  .input-model {
     width: 100%;
     flex: 1;
+  }
+
+  .openai-config-group {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .preset-chips {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chip-btn {
+    flex: 1;
+    text-align: center;
+    padding: 5px 8px;
   }
 
   .toolbar-actions-end {
