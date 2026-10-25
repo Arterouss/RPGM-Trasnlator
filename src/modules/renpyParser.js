@@ -29,7 +29,7 @@ export function unmaskRenpyTags(text, tags) {
   let result = text;
   tags.forEach((tag, index) => {
     const tagPattern = new RegExp(`\\[\\[\\s*TAG[_-]${index}\\s*\\]\\]`, 'gi');
-    result = result.replace(tagPattern, tag);
+    result = result.replace(tagPattern, () => tag);
   });
   return result;
 }

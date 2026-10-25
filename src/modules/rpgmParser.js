@@ -30,7 +30,7 @@ export function unmaskEscapeTags(text, tags) {
   tags.forEach((tag, index) => {
     // Match [[TAG_n]] or loose variations AI might return like [[TAG_n ]] or [[TAG-n]]
     const tagPattern = new RegExp(`\\[\\[\\s*TAG[_-]${index}\\s*\\]\\]`, 'gi');
-    result = result.replace(tagPattern, tag);
+    result = result.replace(tagPattern, () => tag);
   });
   return result;
 }

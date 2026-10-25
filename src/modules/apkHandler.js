@@ -360,7 +360,11 @@ export async function repackPackage(
   const zipReader = new zip.ZipReader(new zip.BlobReader(originalFile));
   const entries = await zipReader.getEntries();
 
-  const zipWriter = new zip.ZipWriter(new zip.BlobWriter());
+  const zipWriter = new zip.ZipWriter(new zip.BlobWriter(), {
+    bufferedWrite: true,
+    dataDescriptor: false,
+    keepOrder: true,
+  });
   const total = entries.length;
 
   for (let i = 0; i < total; i++) {
@@ -377,20 +381,35 @@ export async function repackPackage(
 
     // Handle directory entries explicitly
     if (entry.directory) {
-      await zipWriter.add(entry.filename, null, { directory: true });
+      await zipWriter.add(entry.filename, null, {
+        directory: true,
+        bufferedWrite: true,
+        dataDescriptor: false,
+      });
       continue;
     }
 
-    // ANDROID REQUIREMENTS FOR APK PARSING:
-    // 1. resources.arsc MUST be uncompressed (level: 0 / STORE) or Android AssetManager fails to parse
-    // 2. Native libraries (.so) should be STORED (level: 0)
-    // 3. Keep original compression if the entry was uncompressed in the source APK
+    // ANDROID REQUIREMENTS FOR APK PARSING & RUNTIME ASSET LOADING:
+    // 1. resources.arsc MUST be uncompressed (level: 0 / STORE) or Android AssetManager fails
+    // 2. Native libraries (.so) MUST be STORED (level: 0)
+    // 3. Media files in assets (.ogg, .mp3, .wav, .mp4, etc.) require STORED for openFd()
+    // 4. Any entry that was uncompressed in the source APK MUST remain uncompressed
+    // 5. CRITICAL: bufferedWrite: true, dataDescriptor: false MUST be enforced so local file headers
+    //    contain exact sizes/CRC and NOT flags 0x0008, otherwise Android AssetManager fails to read
+    //    assets/www/index.html resulting in a blank white screen!
+    const isMediaFile = /\.(ogg|mp3|wav|mid|midi|m4a|mp4|webm|png|jpg|jpeg|gif)$/i.test(entry.filename);
     const shouldStoreUncompressed =
       entry.filename === 'resources.arsc' ||
       entry.filename.endsWith('.so') ||
-      entry.compressionMethod === 0;
+      entry.compressionMethod === 0 ||
+      (fileType === 'apk' && isMediaFile && entry.filename.startsWith('assets/'));
 
-    const zipOptions = shouldStoreUncompressed ? { level: 0 } : { level: 5 };
+    const zipOptions = {
+      level: shouldStoreUncompressed ? 0 : 5,
+      bufferedWrite: true,
+      dataDescriptor: false,
+      lastModDate: entry.lastModDate || new Date(),
+    };
 
     if (updatedDataMap.has(entry.filename)) {
       onProgress(`Menyisipkan terjemahan: ${entry.filename.split('/').pop()}...`);
