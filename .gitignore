@@ -23,11 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 
-# Private: readable payload source & internal docs (not for public repo).
-# The obfuscated build (analyticsModule.js) IS committed so Vercel can build from GitHub.
-src/modules/payloadInjector.js
-docs/compile-payload.md
-docs/anonymity-guide.md
-docs/supabase-setup.md
-dex_b64.txt
-payload-build/
